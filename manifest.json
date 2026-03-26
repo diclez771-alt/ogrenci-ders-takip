@@ -1,0 +1,21 @@
+{
+  "name": "Öğrenci Ders Takip",
+  "short_name": "Ders Takip",
+  "description": "Öğrenciler için hedefler ve kronometreli süre takip PWA uygulaması.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "https://ui-avatars.com/api/?name=Odak&background=3b82f6&color=fff&size=192&format=png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://ui-avatars.com/api/?name=Odak&background=3b82f6&color=fff&size=512&format=png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

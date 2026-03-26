@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Öğrenci Ders Takip</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- İkonlar için FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- PWA Settings -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('Servis İşçisi (SW) Başarılı:', registration.scope))
+                    .catch(error => console.log('Servis İşçisi (SW) Başarısız:', error));
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <!-- YAN MENÜ (SIDEBAR) -->
+    <aside class="sidebar">
+        <!-- Profil Alanı -->
+        <div class="profile-section" id="profileSection" title="Profili Düzenlemek İçin Tıkla">
+            <img src="https://ui-avatars.com/api/?name=Öğrenci&background=3b82f6&color=fff&rounded=true&size=128"
+                 alt="Profil Fotoğrafı" class="profile-pic" id="profilePic">
+            <div class="profile-info">
+                <h2 id="studentName">Öğrenci Adı</h2>
+                <span class="profile-badge" id="studentGoal">YKS Hedef: Belirlenmedi</span>
+            </div>
+            <div class="edit-profile-icon" title="Düzenle"><i class="fas fa-pencil-alt"></i></div>
+        </div>
+
+        <!-- Yönlendirme (Menü) -->
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-tab="dashboardTab"><i class="fas fa-home"></i> Ana Sayfa (Hedefler)</a>
+            <a href="#" class="nav-item" data-tab="subjectsTab"><i class="fas fa-book"></i> Dersler & Konular</a>
+            <a href="#" class="nav-item" id="sidebarStatsBtn"><i class="fas fa-chart-pie"></i> İstatistik Raporu</a>
+        </nav>
+
+        <!-- Bugünkü Çalışma Özeti -->
+        <div class="sidebar-time-tracker">
+            <h4><i class="fas fa-clock"></i> Bugünkü Başarın</h4>
+            <strong id="dailyTimeDisplay">0s 0dk</strong>
+            <button id="addGlobalTimeBtn" class="primary-btn w-100"><i class="fas fa-plus"></i> Süre Ekle</button>
+        </div>
+    </aside>
+
+    <!-- ANA İÇERİK ODAĞI -->
+    <main class="main-content">
+        
+        <!-- ================== TAB 1: ANA SAYFA ================== -->
+        <div id="dashboardTab" class="tab-pane active">
+            <h1 style="margin-bottom: 5px;">Kolay Gelsin, <span id="welcomeNameText" style="color: var(--primary-color);">Şampiyon</span>!</h1>
+            <p class="tab-subtitle">Bugünün büyük hedeflerini tamamlamaya ne dersin?</p>
+
+            <!-- GENEL HEDEFLER -->
+            <div class="card goals-card" style="margin-bottom: 30px; border-color: rgba(96, 165, 250, 0.3);">
+                <div style="margin-bottom: 20px;">
+                    <h2 style="font-size: 20px; color: var(--primary-color);"><i class="fas fa-bullseye"></i> Odak Hedeflerim</h2>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 5px;">Haftalık veya günlük büyük hedeflerini buraya yazabilirsin. İşaretlemek harika hissettirecek!</p>
+                </div>
+                
+                <div class="add-task" style="margin-bottom: 15px; align-items: stretch;">
+                    <input type="text" id="goalInput" placeholder="Örn: Bu pazar genel TYT denemesine girilecek." style="flex:1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); padding: 12px 15px; border-radius: 8px; color: white; outline: none; font-size: 15px;">
+                    <input type="date" id="goalDateInput" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); padding: 12px; border-radius: 8px; color: white; outline: none; font-size: 14px;" title="Bitiş Tarihi">
+                    <button id="addGoalBtn" class="primary-btn">Hedefi Ekle</button>
+                </div>
+                
+                <ul id="goalList" style="list-style: none;">
+                    <!-- Hedefler JS ile eklenecek -->
+                </ul>
+            </div>
+            
+        </div>
+
+        <!-- ================== TAB 2: DERSLER & KONULAR ================== -->
+        <div id="subjectsTab" class="tab-pane">
+            
+            <div id="subjectView">
+                <div class="actions-bar">
+                    <h2 style="font-size: 24px; font-weight: 700;">📚 Ders Koleksiyonum</h2>
+                    <button id="openSubjectModalBtn" class="primary-btn"><i class="fas fa-plus"></i> Yeni Ders Ekle</button>
+                </div>
+                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px;">Sisteme ders ekleyip onların içine üniteler ve notlar bırakabilirsin.</p>
+                
+                <div id="subjectGrid" class="subject-grid">
+                    <!-- Ders kartları JS ile buraya eklenecek -->
+                </div>
+            </div>
+
+            <!-- DERS İÇERİSİ / ÜNİTELER GÖRÜNÜMÜ -->
+            <div id="unitView" style="display: none;">
+                <div class="actions-bar">
+                    <button id="backToSubjectsBtn" class="secondary-btn"><i class="fas fa-arrow-left"></i> Derslere Dön</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span id="subjectTimeDisplay" class="subject-time-badge">0s 0dk</span>
+                        <button id="addSubjectTimeBtn" class="primary-btn" style="padding: 8px 16px; font-size: 14px;"><i class="fas fa-stopwatch"></i> Derse Süre Ekle</button>
+                    </div>
+                </div>
+                
+                <h2 id="currentSubjectTitle" style="text-align: center; margin-bottom: 15px; font-size: 32px;">Ders Adı</h2>
+                <div class="subject-banner" id="currentSubjectBanner"></div>
+
+                <div class="card add-task">
+                    <input type="text" id="unitInput" placeholder="Hangi üniteyi veya konuyu çalışacaksın? Yeni görevler belirle.">
+                    <button id="addUnitBtn" class="primary-btn">Ünite / Görev Ekle</button>
+                </div>
+
+                <div class="card task-list-container">
+                    <h2 style="font-size: 18px; margin-bottom: 15px; color: var(--text-muted);">Üniteler / Görevler</h2>
+                    <ul id="unitList" style="list-style: none;">
+                        <!-- Üniteler JS ile buraya eklenecek -->
+                    </ul>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+
+    <!-- ================== MODALLAR & GİZLİ WIDGETLAR ================== -->
+
+    <!-- YENİ DERS EKLEME MODALI -->
+    <div id="addSubjectModal" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-btn" id="closeModalBtn">&times;</span>
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-layer-group"></i> Yeni Ders Ekle</h2>
+            
+            <div class="form-group">
+                <label for="newSubjectName">Dersin Adı</label>
+                <input type="text" id="newSubjectName" placeholder="Örn: Matematik, Fizik, Türkçe...">
+            </div>
+            
+            <div class="form-group">
+                <label for="newSubjectImage">Görsel URL (İsteğe bağlı)</label>
+                <input type="text" id="newSubjectImage" placeholder="Örn: https://resim-linki.com/resim.jpg">
+                <small class="hint">Boş bırakırsan varsayılan kaliteli bir ders görseli atanır.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="newSubjectImportance">Dersin Önem Derecesi</label>
+                <select id="newSubjectImportance" class="form-select">
+                    <option value="high">🔥 Yüksek Önem</option>
+                    <option value="medium" selected>⭐ Orta Önem</option>
+                    <option value="low">🌱 Düşük Önem</option>
+                </select>
+            </div>
+
+            <button id="confirmAddSubjectBtn" class="primary-btn w-100">Dersi Ekle</button>
+        </div>
+    </div>
+
+    <!-- NOT EKLEME MODALI -->
+    <div id="noteModal" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-btn" id="closeNoteModalBtn">&times;</span>
+            <h2 id="noteModalTitle" style="margin-bottom: 20px;">Ünite Notu</h2>
+            
+            <div class="form-group">
+                <textarea id="unitNoteText" rows="6" placeholder="Bu ünite için notlarınızı buraya yazın..."></textarea>
+            </div>
+
+            <div class="form-group file-upload-group">
+                <label for="unitFileInput" class="file-btn"><i class="fas fa-paperclip"></i> Eklenti Belge/Fotoğraf Seç (Maks 1MB)</label>
+                <input type="file" id="unitFileInput" style="display: none;" accept="image/*,.pdf,.txt">
+                <div id="attachedFileDisplay" class="attached-file" style="display: none;">
+                    <div><i class="fas fa-file"></i> <span id="attachedFileName">dosya.pdf</span></div>
+                    <button id="removeAttachedFileBtn" class="remove-file-btn" title="Kaldır"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <button id="saveNoteBtn" class="primary-btn w-100">Notu ve Dosyayı Kaydet</button>
+        </div>
+    </div>
+
+    <!-- SÜRE EKLEME MODALI -->
+    <div id="timeModal" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-btn" id="closeTimeModalBtn">&times;</span>
+            <h2 id="timeModalTitle" style="margin-bottom: 20px;"><i class="fas fa-business-time"></i> Çalışma Süresi Ekle</h2>
+            
+            <div class="form-group">
+                <label for="timeDate">Tarih</label>
+                <input type="date" id="timeDate">
+            </div>
+
+            <div class="form-group">
+                <label for="timeSubjectSelect">Hangi Kategoride?</label>
+                <select id="timeSubjectSelect" class="form-select">
+                    <option value="general">Genel (Ders Bağımsız)</option>
+                    <!-- Dersler JS ile eklenecek -->
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 15px;">
+                <div class="form-group" style="flex: 1;">
+                    <label for="timeHours">Saat</label>
+                    <input type="number" id="timeHours" min="0" max="24" value="0">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="timeMinutes">Dakika</label>
+                    <input type="number" id="timeMinutes" min="0" max="59" value="0">
+                </div>
+            </div>
+
+            <button id="saveTimeBtn" class="primary-btn w-100">Süreyi Kaydet</button>
+        </div>
+    </div>
+
+    <!-- İSTATİSTİK MODALI -->
+    <div id="statsModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" id="closeStatsModalBtn">&times;</span>
+            <h2 style="margin-bottom: 25px;"><i class="fas fa-chart-pie"></i> Kişisel Çalışma İstatistikleri</h2>
+            
+            <div style="margin-bottom: 30px; position: relative; height: 250px; width: 100%;">
+                <canvas id="subjectStatsChart"></canvas>
+            </div>
+
+            <h3 id="yearChartTitle" style="font-size: 16px; margin-bottom: 15px; color: var(--text-color);">Yıllık Çalışma Dengesi</h3>
+            <div style="margin-bottom: 35px; position: relative; height: 180px; width: 100%;">
+                <canvas id="yearlyStatsChart"></canvas>
+            </div>
+
+            <h3 id="monthChartTitle" style="font-size: 16px; margin-bottom: 15px; color: var(--text-color);">Aylık Dağılım</h3>
+            <div style="margin-bottom: 35px; position: relative; height: 180px; width: 100%;">
+                <canvas id="monthlyStatsChart"></canvas>
+            </div>
+
+            <h3 id="weekChartTitle" style="font-size: 16px; margin-bottom: 15px; color: var(--text-color);">Haftalık Dağılım <small style="font-size: 11px; font-weight: normal; color: var(--text-muted);">(Detaylar için günlere tıklayın)</small></h3>
+            <div style="margin-bottom: 35px; position: relative; height: 180px; width: 100%;">
+                <canvas id="weeklyStatsChart"></canvas>
+            </div>
+            
+            <div id="dailyStatsPanel" style="display: none; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 15px; border-radius: 12px; margin-bottom: 30px;">
+                <h4 class="daily-stats-header" id="dailyStatsTitle" style="color: var(--primary-color); margin-bottom: 15px; font-size: 16px; text-align: center;"></h4>
+                <ul id="dailyStatsList" style="list-style: none; margin: 0; padding: 0; max-height: 150px; overflow-y: auto;"></ul>
+                <div id="dailyStatsTotal" style="margin-top: 15px; font-size: 16px; font-weight: bold; text-align: center; color: var(--text-color);"></div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Zaman Dilimi</th>
+                            <th>Toplam Çalışma</th>
+                            <th>Günlük Ortalama Başarı</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsTableBody">
+                        <!-- JS ile doldurulacak -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3 style="margin-top: 25px; margin-bottom: 15px; font-size: 18px; color: var(--primary-color);"><i class="fas fa-fire"></i> Çalışma Isı Haritası (Son Aylık)</h3>
+            <div id="heatmapContainer" style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 25px;"></div>
+
+            <p class="hint" style="margin-top: 15px; text-align: center; color: var(--text-muted); font-size: 13px;">* Ortalamalar, uygulamayı ilk kullandığın günden itibaren geçen aktif gün sayısına bölünerek adil şekilde hesaplanır.</p>
+        </div>
+    </div>
+
+    <!-- PROFİL DÜZENLEME MODALI -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 450px;">
+            <span class="close-btn" id="closeProfileModalBtn">&times;</span>
+            <h2 style="margin-bottom: 25px;"><i class="fas fa-user-edit"></i> Profili ve Hedefi Düzenle</h2>
+            
+            <div class="form-group">
+                <label for="profileNameInput">Ad Soyad / Nasıl Hitap Edelim?</label>
+                <input type="text" id="profileNameInput" placeholder="Örn: Zeynep Yılmaz">
+            </div>
+            
+            <div class="form-group">
+                <label for="profileGoalInput">En Büyük Hedefin / Hayalin</label>
+                <input type="text" id="profileGoalInput" placeholder="Örn: Hedef: ODTÜ Bilgisayar Müh.">
+            </div>
+
+            <div class="form-group">
+                <label for="profileImageInput">Profil Fotoğrafı URL (İsteğe bağlı)</label>
+                <input type="text" id="profileImageInput" placeholder="Örn: https://resim-linki.com/resim.jpg">
+                <small class="hint">İnternetteki bir görselin adresini (Sonu .jpg/.png) buraya yapıştırabilirsin. Boş bırakırsan isminden harf ikonu oluşur.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="profileThemeInput">Uygulama Teması</label>
+                <select id="profileThemeInput" class="form-select">
+                    <option value="dark-blue">Gece & Mavi (Varsayılan)</option>
+                    <option value="light-pink">Gündüz & Pembe</option>
+                </select>
+            </div>
+
+            <button id="saveProfileBtn" class="primary-btn w-100"><i class="fas fa-save"></i> Bilgileri Güncelle</button>
+
+            <hr style="border:0; border-top:1px solid var(--glass-border); margin: 20px 0;">
+            <h3 style="font-size: 15px; color: var(--primary-color); margin-bottom: 10px;"><i class="fas fa-database"></i> Veri Yedekleme İşlemleri</h3>
+            <div style="display: flex; gap: 10px;">
+                <button id="exportDataBtn" class="secondary-btn" style="flex: 1;"><i class="fas fa-download"></i> İndir</button>
+                <label for="importDataInput" class="secondary-btn" style="flex: 1; text-align: center; cursor: pointer; margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px;"><i class="fas fa-upload"></i> Yükle</label>
+                <input type="file" id="importDataInput" accept=".json" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <!-- MOTİVASYON MODALI (HOŞGELDİN) -->
+    <div id="welcomeModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 500px; padding: 0; overflow: hidden; text-align: center;">
+            <div id="welcomeImage" style="height: 220px; background-size: cover; background-position: center; position: relative;">
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 50%; background: linear-gradient(to top, var(--bg-color), transparent);"></div>
+            </div>
+            <div style="padding: 30px 20px;">
+                <h2 style="font-size: 24px; margin-bottom: 15px; color: var(--primary-color);"><i class="fas fa-quote-left"></i> Günün Motivasyonu</h2>
+                <p id="welcomeQuote" style="font-size: 17px; font-style: italic; color: var(--text-color); margin-bottom: 25px; line-height: 1.6;"></p>
+                <button id="closeWelcomeBtn" class="primary-btn" style="padding: 12px 30px; font-size: 16px; border-radius: 30px;">Hadi Sisteme Geçelim! 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALERT / ONAY MODALI (Uygulama İçi Tam Uyumlu) -->
+    <div id="alertModal" class="modal" style="z-index: 9999;">
+        <div class="modal-content glass-panel" style="max-width: 440px; text-align: center; padding: 40px 30px; border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);">
+            <div id="alertIconWrapper" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(145deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; justify-content: center; align-items: center; font-size: 36px; margin: 0 auto 25px auto; color: var(--primary-color); box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                <i class="fas fa-bell" id="dynamicAlertIcon"></i>
+            </div>
+            <h2 id="alertModalTitle" style="margin-bottom: 12px; font-size: 24px; font-weight: 700; color: white;"></h2>
+            <p id="alertModalMessage" style="margin-bottom: 35px; font-size: 16px; color: var(--text-muted); line-height: 1.6;"></p>
+            <div id="alertModalButtons" style="display: flex; gap: 15px;">
+                <button id="alertOkBtn" class="primary-btn" style="flex: 1; padding: 14px; font-size: 16px; border-radius: 12px;"><i class="fas fa-check"></i> Anladım</button>
+            </div>
+            <div id="confirmModalButtons" style="display: none; gap: 15px;">
+                <button id="confirmYesBtn" class="primary-btn" style="flex: 1; padding: 14px; font-size: 15px; border-radius: 12px; background: linear-gradient(135deg, var(--success-color), #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);"><i class="fas fa-plus-circle"></i> Süreyi Kaydet</button>
+                <button id="confirmNoBtn" class="secondary-btn" style="flex: 1; padding: 14px; font-size: 15px; border-radius: 12px; background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;"><i class="fas fa-times"></i> Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- YÜZEN SAYAÇ WIDGET'I -->
+    <div id="floatingTimer" class="floating-timer">
+        <div class="timer-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-grip-horizontal" style="opacity: 0.4; font-size: 14px; margin-right: 4px;"></i>
+                <i class="fas fa-stopwatch" style="color: var(--primary-color);"></i> 
+                <span id="timerModeLabel">Kronometre</span>
+            </div>
+            <button id="timerModeToggleBtn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 30px; height: 30px; border-radius: 8px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s;" title="Mod Değiştir" onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.color='#60a5fa';" onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='var(--text-muted)';"><i class="fas fa-exchange-alt"></i></button>
+        </div>
+        <div class="timer-display" id="timerDisplay">00:00:00</div>
+        <div class="timer-controls">
+            <button id="timerPlayBtn" class="timer-btn play" title="Kronometreyi Başlat"><i class="fas fa-play"></i></button>
+            <button id="timerPauseBtn" class="timer-btn pause" title="Duraklat veya Ara Ver" style="display:none;"><i class="fas fa-pause"></i></button>
+            <button id="timerStopBtn" class="timer-btn stop" title="Çalışmayı Bitir ve Kaydet"><i class="fas fa-square"></i></button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
