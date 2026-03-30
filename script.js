@@ -81,12 +81,16 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem('lastLoginDate', todayStr);
     }
 
-    const defaultImages = [
-        "https://images.unsplash.com/photo-1543286386-2e659306cd6c?auto=format&fit=crop&q=80&w=800",
-        "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=800",
-        "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=800",
-        "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=800"
-    ];
+
+const lessonImages = {
+    "türkçe": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800", // Kitap
+    "matematik": "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=800", // Sayılar/Hesap makinesi
+    "fizik": "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=800", // Atom/Enerji
+    "kimya": "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800", // Deney tüpleri
+    "coğrafya": "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?w=800", // Dünya/Harita
+    "tarih": "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=800", // Antik yapılar/Saat
+    "default": "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800" // Açık Kitap/Kalem (Diğer her şey için)
+};
 
     const motivations = [
         { text: "\"Başarı, her gün tekrarlanan küçük çabaların toplamıdır.\" - Robert Collier", image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=800" },
@@ -96,7 +100,14 @@ document.addEventListener("DOMContentLoaded", () => {
         { text: "\"Vazgeçmediğin sürece ne kadar yavaş gittiğinin bir önemi yoktur.\" - Konfüçyüs", image: "https://images.unsplash.com/photo-1460518451285-97b6aa326961?auto=format&fit=crop&q=80&w=800" }
     ];
 
-    function getRandomImage() { return defaultImages[Math.floor(Math.random() * defaultImages.length)]; }
+   // 91. satırdaki 'getRandomImage' fonksiyonunu şununla değiştir:
+function getRandomImage(lessonName = "") {
+    // Gelen ders ismini küçük harfe çevirip boşlukları temizler (Örn: "Matematik " -> "matematik")
+    const name = lessonName.toString().trim().toLowerCase();
+
+    // Eğer ders ismi yukarıdaki listede varsa o görseli, yoksa "default" (açık kitap) görselini döndürür
+    return lessonImages[name] || lessonImages["default"];
+}
     function saveData() { localStorage.setItem('studyTrackerData', JSON.stringify(appData)); }
 
     // --- DOM ELEMENTS ---
@@ -1208,7 +1219,7 @@ document.addEventListener("DOMContentLoaded", () => {
             await openCustomAlert(`<i class="fas fa-exclamation-circle" style="color:#f59e0b;"></i> Uyarı`, "Lütfen bir ders adı girin!");
             return;
         }
-        if (!image) image = getRandomImage();
+        if (!image) image = getRandomImage(name);
 
         appData.push({
             id: Date.now().toString(),
@@ -1346,6 +1357,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const timerStopBtn = document.getElementById("timerStopBtn");
 
     function updateTimerDisplay() {
+       const customValue = parseInt(document.getElementById("timerMinutesInput")?.value);
+    if (!isTimerPlaying && !isNaN(customValue) && customValue > 0 && timerSeconds === 0) {
+        timerSeconds = customValue * 60;
+    }
         const h = Math.floor(timerSeconds / 3600);
         const m = Math.floor((timerSeconds % 3600) / 60);
         const s = timerSeconds % 60;
@@ -1364,44 +1379,59 @@ document.addEventListener("DOMContentLoaded", () => {
         playDingSound();
         if (timerMode === "stopwatch") {
             timerMode = "pomodoro";
-            timerModeLabel.textContent = "Pomodoro (25dk)";
-            timerModeLabel.style.color = "#f59e0b";
-            timerSeconds = POMODORO_MINS * 60;
+
+
+
+// --- KRONOMETRE & GERİ SAYIM TEK BLOK ÇÖZÜM ---
+timerPlayBtn.onclick = () => {
+    if (!isTimerPlaying) {
+        const inputField = document.getElementById("timerMinutesInput");
+        const customMins = inputField ? parseInt(inputField.value) : 0;
+
+        // MOD SEÇİMİ: Sayı varsa GERİ SAYIM, yoksa İLERİ SAYIM (Kronometre)
+        if (!isNaN(customMins) && customMins > 0) {
+            timerMode = "pomodoro";
+            timerSeconds = customMins * 60;
         } else {
             timerMode = "stopwatch";
-            timerModeLabel.textContent = "Kronometre";
-            timerModeLabel.style.color = "inherit";
             timerSeconds = 0;
         }
-        updateTimerDisplay();
-    });
 
-    timerPlayBtn.addEventListener("click", () => {
-        if (!isTimerPlaying) {
-            isTimerPlaying = true;
-            timerPlayBtn.style.display = "none";
-            timerPauseBtn.style.display = "flex";
-            timerInterval = setInterval(() => {
-                if (timerMode === "stopwatch") {
-                    timerSeconds++;
-                    updateTimerDisplay();
+        isTimerPlaying = true;
+        timerPlayBtn.style.display = "none";
+        timerPauseBtn.style.display = "flex";
+        updateTimerDisplay();
+
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (timerMode === "stopwatch") {
+                timerSeconds++; // İleri sayar
+            } else {
+                if (timerSeconds > 0) {
+                    timerSeconds--; // Geri sayar
                 } else {
-                    if (timerSeconds > 0) {
-                        timerSeconds--;
-                        updateTimerDisplay();
-                    } else {
-                        // POMODORO FINISHED
-                        clearInterval(timerInterval);
-                        isTimerPlaying = false;
-                        timerPauseBtn.style.display = "none";
-                        timerPlayBtn.style.display = "flex";
-                        playSuccessSound();
-                        timerStopBtn.click(); // Automate saving dialog
-                    }
+                    // SÜRE BİTTİĞİNDE
+                    clearInterval(timerInterval);
+                    isTimerPlaying = false;
+                    timerPauseBtn.style.display = "none";
+                    timerPlayBtn.style.display = "flex";
+                    if (typeof playSuccessSound === "function") playSuccessSound();
+                    return;
                 }
-            }, 1000);
-        }
-    });
+            }
+            updateTimerDisplay();
+        }, 1000);
+    }
+};
+
+// DURDURMA BUTONU
+timerPauseBtn.onclick = () => {
+    isTimerPlaying = false;
+    clearInterval(timerInterval);
+    timerPauseBtn.style.display = "none";
+    timerPlayBtn.style.display = "flex";
+};
+
 
     timerPauseBtn.addEventListener("click", () => {
         if (isTimerPlaying) {
@@ -1508,4 +1538,137 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderGoals();
     renderSubjects();
+
+    // Süre belirleme mantığı
+const minutesInput = document.getElementById('timerMinutesInput');
+const playBtn = document.getElementById('timerPlayBtn');
+
+// Başlat butonuna basıldığında eğer kutuda sayı varsa o süreyi kullan
+playBtn.addEventListener('click', () => {
+    const customMinutes = parseInt(minutesInput.value);
+
+    // Eğer bir sayı girilmişse ve şu an süre çalışmıyorsa süreyi güncelle
+    if (!isNaN(customMinutes) && customMinutes > 0) {
+        // Bu kısım senin mevcut script.js içindeki değişken ismine göre değişebilir
+        // Genelde 'timeLeft' veya 'totalSeconds' kullanılır.
+        // Eğer süre 25:00'dan başlıyorsa, o değişkeni burada güncelliyoruz:
+        timeLeft = customMinutes * 60;
+        updateTimerDisplay(); // Ekranı güncelle (00:00:00 formatında)
+    }
 });
+
+
+});
+// DOSYANIN EN ALTINA YAPIŞTIR
+const customInput = document.getElementById("timerMinutesInput");
+
+// Oynat butonuna tıklandığında her şeyi durdur ve sadece bizim süremizi kur
+timerPlayBtn.addEventListener("click", () => {
+    const val = parseInt(customInput.value);
+
+    // Eğer kutuda bir sayı varsa ve süre şu an 25:00 ise (yani yeni başlıyorsa)
+    if (!isNaN(val) && val > 0 && (timerSeconds === 1500 || timerSeconds === 0)) {
+        timerSeconds = val * 60;
+        updateTimerDisplay();
+    }
+}, true); // 'true' parametresi bu işlemin diğerlerinden önce yapılmasını sağlar
+
+// DOSYANIN EN ALTINA YAPIŞTIR
+document.getElementById("timerPlayBtn").addEventListener("click", () => {
+    const customInput = document.getElementById("timerMinutesInput");
+    const val = parseInt(customInput.value);
+
+    // Eğer kutuda bir sayı varsa, her şeyi durdur ve sadece bizim süremizi kur
+    if (!isNaN(val) && val > 0) {
+        timerSeconds = val * 60;
+        // Ekranı anında güncelle (25:00 yerine yazdığın sayı görünsün)
+        if (typeof updateTimerDisplay === "function") {
+            updateTimerDisplay();
+        }
+    }
+}, true); // 'true' parametresi bu işlemin diğer kodlardan ÖNCE çalışmasını sağlar
+
+
+/
+//// ================================================================
+// --- HER ŞEYİ ÇÖZEN "ATOMİK" KOD (25 DK VE DURMA HATASI GİDERİLDİ) ---
+// ================================================================
+(function() {
+    // 1. Elementleri Kesin Olarak Yakala
+    const playBtn = document.getElementById("timerPlayBtn");
+    const pauseBtn = document.getElementById("timerPauseBtn");
+    const inputField = document.getElementById("timerMinutesInput");
+
+    if (!playBtn || !pauseBtn) return;
+
+    // 2. Mevcut Tüm Tıklama Olaylarını SIFIRLA (Çakışmayı Önler)
+    playBtn.onclick = null;
+    pauseBtn.onclick = null;
+
+    // 3. OYNATMA FONKSİYONU
+    playBtn.addEventListener("click", function(e) {
+        e.stopImmediatePropagation();
+
+        if (!window.isTimerPlaying) {
+            const customVal = inputField ? parseInt(inputField.value) : 0;
+
+            // MOD VE SÜRE KURULUMU
+            if (!isNaN(customVal) && customVal > 0) {
+                window.timerMode = "pomodoro";
+                window.timerSeconds = customVal * 60; // Girdiğin sayı (Örn: 2 -> 120 sn)
+                window.initialSetSeconds = customVal * 60;
+            } else {
+                window.timerMode = "stopwatch";
+                window.timerSeconds = 0;
+                window.initialSetSeconds = 0;
+            }
+
+            window.isTimerPlaying = true;
+            playBtn.style.display = "none";
+            pauseBtn.style.display = "flex";
+
+            if (typeof updateTimerDisplay === "function") updateTimerDisplay();
+
+            // SAYACI BAŞLAT
+            if (window.timerInterval) clearInterval(window.timerInterval);
+            window.timerInterval = setInterval(() => {
+                if (window.timerMode === "stopwatch") {
+                    window.timerSeconds++;
+                } else {
+                    if (window.timerSeconds > 0) {
+                        window.timerSeconds--;
+                    } else {
+                        // SÜRE BİTTİĞİNDE
+                        clearInterval(window.timerInterval);
+                        window.isTimerPlaying = false;
+                        pauseBtn.style.display = "none";
+                        playBtn.style.display = "flex";
+                        if (typeof playSuccessSound === "function") playSuccessSound();
+                        return;
+                    }
+                }
+                if (typeof updateTimerDisplay === "function") updateTimerDisplay();
+            }, 1000);
+        }
+    });
+
+    // 4. DURDURMA FONKSİYONU
+    pauseBtn.addEventListener("click", function(e) {
+        e.stopImmediatePropagation();
+        window.isTimerPlaying = false;
+        clearInterval(window.timerInterval);
+        pauseBtn.style.display = "none";
+        playBtn.style.display = "flex";
+    });
+
+    // 5. İSTATİSTİK HATASINI (23 DK PROBLEMİNİ) DÜZELTEN FONKSİYON
+    window.getRealWorkedMinutes = function() {
+        if (window.timerMode === "stopwatch") {
+            return Math.floor(window.timerSeconds / 60);
+        } else {
+            // Örn: 2dk kurdun, 1dk kaldı -> 1dk çalışıldı (25-1=24 hatasını bitirir)
+            const elapsed = window.initialSetSeconds - window.timerSeconds;
+            return Math.max(0, Math.floor(elapsed / 60));
+        }
+    };
+})();

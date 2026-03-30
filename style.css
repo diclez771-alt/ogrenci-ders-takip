@@ -820,3 +820,82 @@ body.theme-light-pink .floating-timer.is-dragging {
     box-shadow: 0 30px 60px rgba(236, 72, 153, 0.5), inset 0 1px 0 rgba(255,255,255,0.5) !important;
     transform: scale(1.02) !important;
 }
+
+/* Kronometre kutusunu küçültme ve kareleştirme */
+#floatingTimer {
+    width: 220px !important; /* Genişliği daralttık */
+    padding: 15px !important;
+    border-radius: 20px !important;
+}
+
+/* Giriş alanını şıklaştırma */
+.timer-input-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin: 10px 0;
+}
+
+#timerMinutesInput {
+    width: 45px !important;
+    height: 25px;
+    font-size: 14px;
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 6px !important;
+}
+
+/* Büyük 25:00 yazısını biraz küçültelim ki kutuya sığsın */
+#timerDisplay {
+    font-size: 2.5rem !important;
+    margin: 10px 0 !important;
+}
+
+#floatingTimer {
+    width: 200px !important;      /* Kutuyu kareye yaklaştırdık */
+    min-height: 200px !important;
+    padding: 10px !important;
+}
+
+#timerDisplay {
+    font-size: 2rem !important;   /* Yazıyı kutuya sığacak kadar küçülttük */
+    margin: 5px 0 !important;
+}
+
+.timer-input-group {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    font-size: 11px;             /* Yazıları küçülttük */
+}
+
+#floatingTimer {
+    width: 200px !important;
+    height: 200px !important;
+    padding: 15px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.timer-input-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin-bottom: 5px !important;
+}
+
+#timerMinutesInput {
+    width: 40px !important;
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid white !important;
+    color: white !important;
+    border-radius: 4px;
+}
+
+#timerDisplay {
+    font-size: 2.2rem !important;
+    margin: 10px 0 !important;
+}

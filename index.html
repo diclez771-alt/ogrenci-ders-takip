@@ -282,8 +282,8 @@
             </div>
             
             <div class="form-group">
-                <label for="profileGoalInput">En Büyük Hedefin / Hayalin</label>
-                <input type="text" id="profileGoalInput" placeholder="Örn: Hedef: ODTÜ Bilgisayar Müh.">
+                <label for="profileGoalInput">Bölüm/Sınıf Bilgisi</label>
+                <input type="text" id="profileGoalInput" placeholder="Örn: Sayısal-12.Sınıf ">
             </div>
 
             <div class="form-group">
@@ -353,6 +353,11 @@
                 <span id="timerModeLabel">Kronometre</span>
             </div>
             <button id="timerModeToggleBtn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 30px; height: 30px; border-radius: 8px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s;" title="Mod Değiştir" onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.color='#60a5fa';" onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='var(--text-muted)';"><i class="fas fa-exchange-alt"></i></button>
+
+     <div class="timer-input-group" style="display: flex; justify-content: center; gap: 5px; margin: 10px 0;">
+    <input type="number" id="timerMinutesInput" placeholder="Dk" style="width: 50px; text-align: center; background: #222; color: white; border: 1px solid #444; border-radius: 5px;">
+    <span style="font-size: 12px; color: #aaa;">(Geri sayım için sayı girin)</span>
+</div>
         </div>
         <div class="timer-display" id="timerDisplay">00:00:00</div>
         <div class="timer-controls">
