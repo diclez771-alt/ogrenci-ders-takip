@@ -1379,22 +1379,31 @@ function getRandomImage(lessonName = "") {
         playDingSound();
         if (timerMode === "stopwatch") {
             timerMode = "pomodoro";
+            // 1378. satırı şununla değiştir:
+// 1379. satıra bunu yapıştır:
+        const customMins = parseInt(document.getElementById("timerMinutesInput").value);
+        timerSeconds = (!isNaN(customMins) && customMins > 0) ? customMins * 60 : POMODORO_MINS * 60;
 
+        timerModeLabel.style.color = "#f59e0b";
+        updateTimerDisplay();
+    } else {
+        // Stopwatch modu kısmı (burası kalsın)
+        timerMode = "stopwatch";
+        timerModeLabel.textContent = "Kronometre";
+        timerModeLabel.style.color = "inherit";
+        timerSeconds = 0;
+        updateTimerDisplay();
+    }
+});
 
-
-// --- KRONOMETRE & GERİ SAYIM TEK BLOK ÇÖZÜM ---
+// BAŞLAT BUTONU MANTIĞI
 timerPlayBtn.onclick = () => {
     if (!isTimerPlaying) {
-        const inputField = document.getElementById("timerMinutesInput");
-        const customMins = inputField ? parseInt(inputField.value) : 0;
+        const inputVal = parseInt(document.getElementById("timerMinutesInput").value);
 
-        // MOD SEÇİMİ: Sayı varsa GERİ SAYIM, yoksa İLERİ SAYIM (Kronometre)
-        if (!isNaN(customMins) && customMins > 0) {
-            timerMode = "pomodoro";
-            timerSeconds = customMins * 60;
-        } else {
-            timerMode = "stopwatch";
-            timerSeconds = 0;
+        // Eğer kutu doluysa o süreyi, boşsa mevcut süreyi başlat
+        if (!isNaN(inputVal) && inputVal > 0 && timerSeconds <= 0) {
+            timerSeconds = inputVal * 60;
         }
 
         isTimerPlaying = true;
@@ -1402,21 +1411,19 @@ timerPlayBtn.onclick = () => {
         timerPauseBtn.style.display = "flex";
         updateTimerDisplay();
 
-        if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             if (timerMode === "stopwatch") {
-                timerSeconds++; // İleri sayar
+                timerSeconds++;
             } else {
                 if (timerSeconds > 0) {
-                    timerSeconds--; // Geri sayar
+                    timerSeconds--;
                 } else {
-                    // SÜRE BİTTİĞİNDE
                     clearInterval(timerInterval);
                     isTimerPlaying = false;
                     timerPauseBtn.style.display = "none";
                     timerPlayBtn.style.display = "flex";
                     if (typeof playSuccessSound === "function") playSuccessSound();
-                    return;
+                    if (document.getElementById("timerStopBtn")) document.getElementById("timerStopBtn").click();
                 }
             }
             updateTimerDisplay();
@@ -1424,12 +1431,12 @@ timerPlayBtn.onclick = () => {
     }
 };
 
-// DURDURMA BUTONU
+// DURDURMA BUTONU (Burası da silinmiş olabilir, mutlaka ekle)
 timerPauseBtn.onclick = () => {
     isTimerPlaying = false;
-    clearInterval(timerInterval);
     timerPauseBtn.style.display = "none";
     timerPlayBtn.style.display = "flex";
+    clearInterval(timerInterval);
 };
 
 
@@ -1589,86 +1596,20 @@ document.getElementById("timerPlayBtn").addEventListener("click", () => {
 }, true); // 'true' parametresi bu işlemin diğer kodlardan ÖNCE çalışmasını sağlar
 
 
-/
-//// ================================================================
-// --- HER ŞEYİ ÇÖZEN "ATOMİK" KOD (25 DK VE DURMA HATASI GİDERİLDİ) ---
-// ================================================================
-(function() {
-    // 1. Elementleri Kesin Olarak Yakala
-    const playBtn = document.getElementById("timerPlayBtn");
-    const pauseBtn = document.getElementById("timerPauseBtn");
-    const inputField = document.getElementById("timerMinutesInput");
+// DOSYANIN EN ALTINA EKLE
+document.getElementById("timerPlayBtn").onclick = function() {
+    const input = document.getElementById("timerMinutesInput");
+    const val = parseInt(input.value);
 
-    if (!playBtn || !pauseBtn) return;
+    // Eğer kutuda bir sayı varsa ve şu an duruyorsak, süreyi zorla güncelle
+    if (!isTimerPlaying && !isNaN(val) && val > 0) {
+        timerSeconds = val * 60;
+        updateTimerDisplay();
+    }
 
-    // 2. Mevcut Tüm Tıklama Olaylarını SIFIRLA (Çakışmayı Önler)
-    playBtn.onclick = null;
-    pauseBtn.onclick = null;
+    // Eğer senin kodunda başlatma fonksiyonunun adı startTimer ise:
+    if(typeof startTimer === "function") startTimer();
+    // Eğer startCountdown ise:
+    else if(typeof startCountdown === "function") startCountdown();
+};
 
-    // 3. OYNATMA FONKSİYONU
-    playBtn.addEventListener("click", function(e) {
-        e.stopImmediatePropagation();
-
-        if (!window.isTimerPlaying) {
-            const customVal = inputField ? parseInt(inputField.value) : 0;
-
-            // MOD VE SÜRE KURULUMU
-            if (!isNaN(customVal) && customVal > 0) {
-                window.timerMode = "pomodoro";
-                window.timerSeconds = customVal * 60; // Girdiğin sayı (Örn: 2 -> 120 sn)
-                window.initialSetSeconds = customVal * 60;
-            } else {
-                window.timerMode = "stopwatch";
-                window.timerSeconds = 0;
-                window.initialSetSeconds = 0;
-            }
-
-            window.isTimerPlaying = true;
-            playBtn.style.display = "none";
-            pauseBtn.style.display = "flex";
-
-            if (typeof updateTimerDisplay === "function") updateTimerDisplay();
-
-            // SAYACI BAŞLAT
-            if (window.timerInterval) clearInterval(window.timerInterval);
-            window.timerInterval = setInterval(() => {
-                if (window.timerMode === "stopwatch") {
-                    window.timerSeconds++;
-                } else {
-                    if (window.timerSeconds > 0) {
-                        window.timerSeconds--;
-                    } else {
-                        // SÜRE BİTTİĞİNDE
-                        clearInterval(window.timerInterval);
-                        window.isTimerPlaying = false;
-                        pauseBtn.style.display = "none";
-                        playBtn.style.display = "flex";
-                        if (typeof playSuccessSound === "function") playSuccessSound();
-                        return;
-                    }
-                }
-                if (typeof updateTimerDisplay === "function") updateTimerDisplay();
-            }, 1000);
-        }
-    });
-
-    // 4. DURDURMA FONKSİYONU
-    pauseBtn.addEventListener("click", function(e) {
-        e.stopImmediatePropagation();
-        window.isTimerPlaying = false;
-        clearInterval(window.timerInterval);
-        pauseBtn.style.display = "none";
-        playBtn.style.display = "flex";
-    });
-
-    // 5. İSTATİSTİK HATASINI (23 DK PROBLEMİNİ) DÜZELTEN FONKSİYON
-    window.getRealWorkedMinutes = function() {
-        if (window.timerMode === "stopwatch") {
-            return Math.floor(window.timerSeconds / 60);
-        } else {
-            // Örn: 2dk kurdun, 1dk kaldı -> 1dk çalışıldı (25-1=24 hatasını bitirir)
-            const elapsed = window.initialSetSeconds - window.timerSeconds;
-            return Math.max(0, Math.floor(elapsed / 60));
-        }
-    };
-})();
